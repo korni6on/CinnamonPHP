@@ -8,5 +8,5 @@
     $cinnamon->AddTemplatePath("./templates");
     $cinnamon->ForceRegenerateCache(TRUE);
     $test = "Hello  world!!!";
-    echo $cinnamon->LoadTemplate('template1.html');
+    echo $cinnamon->LoadTemplate('template1.html', TRUE);
 ?>

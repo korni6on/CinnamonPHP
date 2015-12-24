@@ -18,7 +18,7 @@ class CinnamonPHP {
         $this->cacheDir = '';
         $this->externalCacheDir = false;
         $this->forceRegenerateCache = false;
-        
+
         $this->cacheSufix = 'CinnamonPHP.inc';
     }
 
@@ -29,14 +29,17 @@ class CinnamonPHP {
         foreach ($matches[1] as $key => $value) {
             $var = trim($matches[2][$key]);
             $code.='global $' . $var . ";\r\n";
-            $templateContent = preg_filter('/(?<!\\\\)('.$value.')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent,1);
+            $templateContent = preg_filter('/(?<!\\\\)(' . $value . ')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent, 1);
         }
         $code .= "ob_start();\r\n?>\r\n";
         $code.= $templateContent;
         return $code;
     }
 
-    public function LoadTemplate($templateName) {
+    public function LoadTemplate($templateName, $compress = FALSE) {
+        /**
+         * @todo Normalize template name if it contains directory
+         */
         $templateRealPath = '';
         $templateCacheRealPath = '';
 
@@ -59,6 +62,23 @@ class CinnamonPHP {
 
         include $templateCacheRealPath;
         $code = ob_get_clean();
+        
+        if ($compress) {
+            $search = array(
+                '/\>[^\S ]+/s', // strip whitespaces after tags, except space
+                '/[^\S ]+\</s', // strip whitespaces before tags, except space
+                '/(\s)+/s'       // shorten multiple whitespace sequences
+            );
+
+            $replace = array(
+                '>',
+                '<',
+                '\\1'
+            );
+
+            $code = preg_replace($search, $replace, $code);
+        }
+        
         return $code;
     }
 
