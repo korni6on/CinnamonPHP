@@ -22,22 +22,8 @@ class CinnamonPHP {
         $this->cacheSufix = 'CinnamonPHP.inc';
     }
 
-    protected function GenerateCacheString($templateContent) {
-        $matches = array();
-        preg_match_all('/[^\\\\]({{([\\sa-z0-9\\.\\(\\)\\|\\,]+)}})/mi', $templateContent, $matches);
-        $code = "<?php\r\n";
-        foreach ($matches[1] as $key => $value) {
-            $var = trim($matches[2][$key]);
-            $code.='global $' . $var . ";\r\n";
-            $templateContent = preg_filter('/(?<!\\\\)(' . $value . ')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent, 1);
-        }
-        $code .= "ob_start();\r\n?>\r\n";
-        $code.= $templateContent;
-        return $code;
-    }
-
     public function LoadTemplate($templateName, $compress = FALSE) {
-        
+
         $templateRealPath = '';
         $templateCacheRealPath = '';
 
@@ -47,7 +33,7 @@ class CinnamonPHP {
                 if ($this->externalCacheDir) {
                     $templateCacheRealPath = $this->externalCacheDir . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 } else {
-                    $templateName = str_replace(array('/','\\'), '__', $templateName);
+                    $templateName = str_replace(array('/', '\\'), '__', $templateName);
                     $templateCacheRealPath = $path . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 }
                 break;
@@ -58,36 +44,39 @@ class CinnamonPHP {
             $template = $this->GenerateCacheString(file_get_contents($templateRealPath));
             file_put_contents($templateCacheRealPath, $template);
         }
-
-        include $templateCacheRealPath;
-        $code = ob_get_clean();
         
+        try {
+            include $templateCacheRealPath;
+        } catch (Exception $ex) {
+            throw new Exception("Canot include cache file");
+        }
+        
+        $code = ob_get_clean();
+
         if ($compress) {
             $search = array(
                 '/\>[^\S ]+/s', // strip whitespaces after tags, except space
                 '/[^\S ]+\</s', // strip whitespaces before tags, except space
                 '/(\s)+/s'       // shorten multiple whitespace sequences
             );
-
             $replace = array(
                 '>',
                 '<',
                 '\\1'
             );
-
             $code = preg_replace($search, $replace, $code);
-            $code = preg_replace('~>\\s+<~m', '><', $code);
+            $code = preg_replace('~>\\s+<~m', '><', $code); //
         }
-        
+
         return $code;
     }
 
     public function ForceRegenerateCache($force) {
-        return $this->forceRegenerateCache = $force;
+        return $this->forceRegenerateCache = $force ? TRUE : FALSE;
     }
 
     public function SaveInCacheDir($save) {
-        return $this->externalCacheDir = $save;
+        return $this->externalCacheDir = $save ? TRUE : FALSE;
     }
 
     public function SetCacheDire($path, $forceCreate = FALSE) {
@@ -104,10 +93,14 @@ class CinnamonPHP {
         return FALSE;
     }
 
-    public function RemoveCacheDire() {
+    public function RemoveCacheDir() {
         $this->externalCacheDir = false;
         $this->cacheDir = '';
         return TRUE;
+    }
+
+    public function GetExternalCacheDir() {
+        return $this->externalCacheDir;
     }
 
     public function AddTemplatePath($path) {
@@ -119,13 +112,31 @@ class CinnamonPHP {
         return FALSE;
     }
 
-    public function RemoveRemplatePath($path) {
+    public function RemoveTemplatePath($path) {
         $path = realpath($path);
-        if (($key = array_search($path, $this->$templatePaths) && $path !== FALSE) !== false) {
+        if (($key = array_search($path, $this->$templatePaths) && $path !== FALSE) !== FALSE) {
             unset($this->templatePaths[$key]);
             return TRUE;
         }
         return FALSE;
+    }
+
+    public function GetTemplatePaths() {
+        return $this->templatePaths;
+    }
+
+    protected function GenerateCacheString($templateContent) {
+        $matches = array();
+        preg_match_all('/[^\\\\]({{([\\sa-z0-9\\.\\(\\)\\|\\,]+)}})/mi', $templateContent, $matches);
+        $code = "<?php\r\n";
+        foreach ($matches[1] as $key => $value) {
+            $var = trim($matches[2][$key]);
+            $code.='global $' . $var . ";\r\n";
+            $templateContent = preg_filter('/(?<!\\\\)(' . $value . ')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent, 1);
+        }
+        $code .= "ob_start();\r\n?>\r\n";
+        $code.= $templateContent;
+        return $code;
     }
 
 }
