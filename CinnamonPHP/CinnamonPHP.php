@@ -17,7 +17,6 @@ class CinnamonPHP {
      * Construct CinnamonPHP
      * @return object Class constructor
      */
-
     public function __construct() {
         $this->templatePaths = array();
         $this->cacheDir = '';
