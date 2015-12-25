@@ -37,9 +37,7 @@ class CinnamonPHP {
     }
 
     public function LoadTemplate($templateName, $compress = FALSE) {
-        /**
-         * @todo Normalize template name if it contains directory
-         */
+        
         $templateRealPath = '';
         $templateCacheRealPath = '';
 
