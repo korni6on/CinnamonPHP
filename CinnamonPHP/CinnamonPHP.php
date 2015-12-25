@@ -49,6 +49,7 @@ class CinnamonPHP {
                 if ($this->externalCacheDir) {
                     $templateCacheRealPath = $this->externalCacheDir . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 } else {
+                    $templateName = str_replace(array('/','\\'), '__', $templateName);
                     $templateCacheRealPath = $path . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 }
                 break;
