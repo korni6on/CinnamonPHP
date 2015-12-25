@@ -77,6 +77,7 @@ class CinnamonPHP {
             );
 
             $code = preg_replace($search, $replace, $code);
+            $code = preg_replace('~>\\s+<~m', '><', $code);
         }
         
         return $code;
