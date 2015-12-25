@@ -12,6 +12,11 @@ class CinnamonPHP {
     protected $externalCacheDir;
     protected $forceRegenerateCache;
     private $cacheSufix;
+    
+    /**
+     * Construct CinnamonPHP
+     * @return object Class constructor
+     */
 
     public function __construct() {
         $this->templatePaths = array();
@@ -21,7 +26,14 @@ class CinnamonPHP {
 
         $this->cacheSufix = 'CinnamonPHP.inc';
     }
-
+    
+    /**
+     * Process template.
+     * @param string Absolute or relative path to template 
+     * @param bool If TRUE will remove double space, new lines and space between tags else will return code as it is writen in template.
+     * @return string Processed string from template.
+     * @throws Exception Throw exception if cannot include cache file
+     */
     public function LoadTemplate($templateName, $compress = FALSE) {
 
         $templateRealPath = '';
@@ -70,7 +82,7 @@ class CinnamonPHP {
 
         return $code;
     }
-
+    
     public function ForceRegenerateCache($force) {
         return $this->forceRegenerateCache = $force ? TRUE : FALSE;
     }
