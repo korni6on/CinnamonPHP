@@ -31,9 +31,9 @@ class CinnamonPHP {
             if (file_exists($path . DIRECTORY_SEPARATOR . $templateName)) {
                 $templateRealPath = $path . DIRECTORY_SEPARATOR . $templateName;
                 if ($this->externalCacheDir) {
-                    $templateCacheRealPath = $this->externalCacheDir . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
+                    $templateName = str_replace(array('/', '\\'), array('__', '__'), $templateName);
+                    $templateCacheRealPath = $this->cacheDir . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 } else {
-                    $templateName = str_replace(array('/', '\\'), '__', $templateName);
                     $templateCacheRealPath = $path . DIRECTORY_SEPARATOR . $templateName . $this->cacheSufix;
                 }
                 break;
@@ -44,13 +44,13 @@ class CinnamonPHP {
             $template = $this->GenerateCacheString(file_get_contents($templateRealPath));
             file_put_contents($templateCacheRealPath, $template);
         }
-        
+
         try {
             include $templateCacheRealPath;
         } catch (Exception $ex) {
             throw new Exception("Canot include cache file");
         }
-        
+
         $code = ob_get_clean();
 
         if ($compress) {
@@ -80,14 +80,14 @@ class CinnamonPHP {
     }
 
     public function SetCacheDire($path, $forceCreate = FALSE) {
-        $path = realpath($path);
-        if (file_exists($path) && is_dir($path) && $path !== FALSE) {
+        $realPath = realpath($path);
+        if (file_exists($path) && is_dir($path) && $realPath !== FALSE) {
             $this->externalCacheDir = TRUE;
-            $this->cacheDir = $path;
+            $this->cacheDir = $realPath;
             return TRUE;
         } elseif ($forceCreate === TRUE) {
             if (mkdir($path, 0777, TRUE) === TRUE) {
-                return $this->SetExternalFolder($path);
+                return $this->SetCacheDire($path);
             }
         }
         return FALSE;
@@ -127,11 +127,15 @@ class CinnamonPHP {
 
     protected function GenerateCacheString($templateContent) {
         $matches = array();
+        $globalVariables = array();
         preg_match_all('/[^\\\\]({{([\\sa-z0-9\\.\\(\\)\\|\\,]+)}})/mi', $templateContent, $matches);
         $code = "<?php\r\n";
         foreach ($matches[1] as $key => $value) {
             $var = trim($matches[2][$key]);
-            $code.='global $' . $var . ";\r\n";
+            if (!in_array($var, $globalVariables)) {
+                $code.='global $' . $var . ";\r\n";
+                $globalVariables[] = $var;
+            }
             $templateContent = preg_filter('/(?<!\\\\)(' . $value . ')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent, 1);
         }
         $code .= "ob_start();\r\n?>\r\n";
