@@ -12,7 +12,7 @@ class CinnamonPHP {
     protected $externalCacheDir;
     protected $forceRegenerateCache;
     private $cacheSufix;
-    
+
     /**
      * Construct CinnamonPHP
      * @return object Class constructor
@@ -25,7 +25,7 @@ class CinnamonPHP {
 
         $this->cacheSufix = 'CinnamonPHP.inc';
     }
-    
+
     /**
      * Process template.
      * @param string Absolute or relative path to template 
@@ -81,7 +81,7 @@ class CinnamonPHP {
 
         return $code;
     }
-    
+
     public function ForceRegenerateCache($force) {
         return $this->forceRegenerateCache = $force ? TRUE : FALSE;
     }
@@ -143,9 +143,14 @@ class CinnamonPHP {
         $code = "<?php\r\n";
         foreach ($matches[1] as $key => $value) {
             $var = trim($matches[2][$key]);
-            if (!in_array($var, $globalVariables)) {
-                $code.='global $' . $var . ";\r\n";
-                $globalVariables[] = $var;
+            $globalVar = $var;
+            if (strpos($var, '.') !== FALSE) {
+                $globalVar = current(explode(".", $var));
+                $var = str_replace('.', '->', $var);
+            }
+            if (!in_array($globalVar, $globalVariables)) {
+                $code.='global $' . $globalVar . ";\r\n";
+                $globalVariables[] = $globalVar;
             }
             $templateContent = preg_filter('/(?<!\\\\)(' . $value . ')/', '<?php echo isset($' . $var . ') ? $' . $var . ' : ""; ?>', $templateContent, 1);
         }
