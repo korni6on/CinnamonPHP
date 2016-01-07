@@ -139,13 +139,18 @@ class CinnamonPHP {
     protected function GenerateCacheString($templateContent) {
         $matches = array();
         $globalVariables = array();
-        preg_match_all('/[^\\\\]({{([\\sa-z0-9\\.\\(\\)\\|\\,]+)}})/mi', $templateContent, $matches);
+        preg_match_all('/[^\\\\]({{([\\sa-z0-9\\.\\(\\)\\|\\,\\[\\]]+)}})/mi', $templateContent, $matches);
         $code = "<?php\r\n";
         foreach ($matches[1] as $key => $value) {
             $var = trim($matches[2][$key]);
-            $globalVar = $var;
+            $arrayMatches = array();
+            preg_match_all('/(.+?)(?=[\\[\\.])/mi', $var, $arrayMatches);
+            if (count($arrayMatches[0]) > 0) {
+                $globalVar = $arrayMatches[0][0];
+            } else {
+                $globalVar = $var;
+            }
             if (strpos($var, '.') !== FALSE) {
-                $globalVar = current(explode(".", $var));
                 $var = str_replace('.', '->', $var);
             }
             if (!in_array($globalVar, $globalVariables)) {
