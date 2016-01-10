@@ -136,6 +136,10 @@ class CinnamonPHP {
         return $this->templatePaths;
     }
 
+    public static function GetVar($variable_route, $arr_obj, $default_value = '') {
+        return self::get_var($variable_route, $arr_obj, $default_value);
+    }
+
     protected function GenerateCacheString($templateContent) {
         $matches = array();
         $globalVariables = array();
@@ -164,4 +168,67 @@ class CinnamonPHP {
         return $code;
     }
 
+    #region of external functions
+
+    /**
+     * @source https://github.com/brutalenemy666/wp-utils/blob/master/utils/class-func-helpers.php
+     */
+
+    /**
+     * Checks if json
+     * @param  mixed  $string
+     * @return boolean         [description]
+     */
+    protected static function is_json($string) {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
+
+    /**
+     * Recursive function for retrieving a value by a given variable route in a specific array or object
+     * Return false if the variable isn't available
+     *
+     * Examples:
+     * $variable_route=ID, $arr_obj=new WP_POST, return => $arr_obj->ID
+     * $variable_route=post|post_name, $arr_obj=(object), return => $arr_obj->post->post_name
+     *
+     * @param  string $variable_route
+     * @param  mixed $arr_obj
+     * @return a value specified by a variable route from a given array or object
+     */
+    protected static function get_var($variable_route, $arr_obj, $default_value = '') {
+        if (!$arr_obj) {
+            return $default_value;
+        }
+        $route_parts = explode('|', $variable_route);
+        $var_name = trim($route_parts[0]);
+        $result = '';
+        // try to convert json/serialized strings
+        $arr_obj = self::unpack_variable($arr_obj);
+        // get the value
+        if (is_object($arr_obj) && !empty($arr_obj->$var_name)) {
+            $result = $arr_obj->$var_name;
+        } else if (is_array($arr_obj) && !empty($arr_obj[$var_name])) {
+            $result = $arr_obj[$var_name];
+        } else {
+            return $default_value;
+        }
+        if (count($route_parts) > 1) {
+            unset($route_parts[0]);
+            return self::get_var(implode('|', $route_parts), $result, $default_value);
+        } else {
+            return $result;
+        }
+    }
+
+    protected static function unpack_variable($variable) {
+        if (is_string($variable) && is_serialized_string($variable)) {
+            $variable = unserialize($variable);
+        } else if (is_string($variable) && self::is_json($variable)) {
+            $variable = json_decode($variable);
+        }
+        return $variable;
+    }
+
+    #endregion
 }
